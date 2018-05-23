@@ -41,7 +41,7 @@ public class JavaScriptInterface<T extends View> {
                     int length = jsonArray.length();
                     Class[] classes = new Class[length];
                     Object[] argValues = new Object[length];
-                    extraExecParams(jsonArray,classes,argValues);
+                    extraExecParams(jsonArray, classes, argValues);
                     Constructor<?> constructor = aClass.getConstructor(classes);
                     o = constructor.newInstance(argValues);
                 } else {
@@ -49,8 +49,9 @@ public class JavaScriptInterface<T extends View> {
                     constructor = aClass.getConstructor();
                     o = constructor.newInstance();
                 }
-                mObjectSparseArray.put(o.hashCode(), new SoftReference<>(o));
-                return o.hashCode();
+                int hashCode = o.hashCode();
+                mObjectSparseArray.put(hashCode, new SoftReference<>(o));
+                return hashCode;
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
@@ -84,6 +85,14 @@ public class JavaScriptInterface<T extends View> {
         return 0;
     }
 
+    /**
+     * 获取一些通用上下文对象
+     */
+    @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
+    public int getActivity() {
+        return t.getContext().hashCode();
+    }
+
     private Class getClassFromType(String classType) throws ClassNotFoundException {
         if ("I".equals(classType)) {
             return int.class;
@@ -109,17 +118,17 @@ public class JavaScriptInterface<T extends View> {
 
     private Object getPrimitiveValue(String classType, String value) {
         if ("I".equals(classType)) {
-            return Integer.parseInt(value);
+            return (int) Long.parseLong(value);
         } else if ("V".equals(classType)) {
             return null;//TODO:
         } else if ("C".equals(classType)) {
-            return (char) Integer.parseInt(value);
+            return (char) Long.parseLong(value);
         } else if ("Z".equals(classType)) {
             return Boolean.parseBoolean(value);
         } else if ("B".equals(classType)) {
-            return (byte) Integer.parseInt(value);
+            return (byte) Long.parseLong(value);
         } else if ("S".equals(classType)) {
-            return (short) Integer.parseInt(value);
+            return (short) Long.parseLong(value);
         } else if ("F".equals(classType)) {
             return Float.parseFloat(value);
         } else if ("J".equals(classType)) {

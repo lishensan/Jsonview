@@ -1,3 +1,217 @@
+/*
+	Base.js, version 1.1a
+	Copyright 2006-2010, Dean Edwards
+	License: http://www.opensource.org/licenses/mit-license.php
+*/
+'use strict'
+var Base = function () {
+    // dummy
+};
+
+Base.extend = function (_instance, _static) { // subclass
+    var extend = Base.prototype.extend;
+
+    // build the prototype
+    Base._prototyping = true;
+    var proto = new this;
+    extend.call(proto, _instance);
+    proto.base = function () {
+        // call this method from any other method to invoke that method's ancestor
+    };
+    delete Base._prototyping;
+
+    // create the wrapper for the constructor function
+    //var constructor = proto.constructor.valueOf(); //-dean
+    var constructor = proto.constructor;
+    var klass = proto.constructor = function () {
+        if (!Base._prototyping) {
+            if (this._constructing || this.constructor == klass) { // instantiation
+                this._constructing = true;
+                constructor.apply(this, arguments);
+                delete this._constructing;
+            } else if (arguments[0] != null) { // casting
+                return (arguments[0].extend || extend).call(arguments[0], proto);
+            }
+        }
+    };
+
+    // build the class interface
+    klass.ancestor = this;
+    klass.extend = this.extend;
+    klass.forEach = this.forEach;
+    klass.implement = this.implement;
+    klass.prototype = proto;
+    klass.toString = this.toString;
+    klass.valueOf = function (type) {
+        //return (type == "object") ? klass : constructor; //-dean
+        return (type == "object") ? klass : constructor.valueOf();
+    };
+    extend.call(klass, _static);
+    // class initialisation
+    if (typeof klass.init == "function") klass.init();
+    return klass;
+};
+
+Base.prototype = {
+    extend: function (source, value) {
+        if (arguments.length > 1) { // extending with a name/value pair
+            var ancestor = this[source];
+            if (ancestor && (typeof value == "function") && // overriding a method?
+                // the valueOf() comparison is to avoid circular references
+                (!ancestor.valueOf || ancestor.valueOf() != value.valueOf()) &&
+                /\bbase\b/.test(value)) {
+                // get the underlying method
+                var method = value.valueOf();
+                // override
+                value = function () {
+                    var previous = this.base || Base.prototype.base;
+                    this.base = ancestor;
+                    var returnValue = method.apply(this, arguments);
+                    this.base = previous;
+                    return returnValue;
+                };
+                // point to the underlying method
+                value.valueOf = function (type) {
+                    return (type == "object") ? value : method;
+                };
+                value.toString = Base.toString;
+            }
+            this[source] = value;
+        } else if (source) { // extending with an object literal
+            var extend = Base.prototype.extend;
+            // if this object has a customised extend method then use it
+            if (!Base._prototyping && typeof this != "function") {
+                extend = this.extend || extend;
+            }
+            var proto = { toSource: null };
+            // do the "toString" and other methods manually
+            var hidden = ["constructor", "toString", "valueOf"];
+            // if we are prototyping then include the constructor
+            var i = Base._prototyping ? 0 : 1;
+            while (key = hidden[i++]) {
+                if (source[key] != proto[key]) {
+                    extend.call(this, key, source[key]);
+
+                }
+            }
+            // copy each of the source object's properties to this object
+            for (var key in source) {
+                if (!proto[key]) extend.call(this, key, source[key]);
+            }
+        }
+        return this;
+    }
+};
+
+// initialise
+Base = Base.extend({
+    constructor: function () {
+        this.extend(arguments[0]);
+    }
+}, {
+        ancestor: Object,
+        version: "1.1",
+
+        forEach: function (object, block, context) {
+            for (var key in object) {
+                if (this.prototype[key] === undefined) {
+                    block.call(context, object[key], key, object);
+                }
+            }
+        },
+
+        implement: function () {
+            for (var i = 0; i < arguments.length; i++) {
+                if (typeof arguments[i] == "function") {
+                    // if it's a function, call it
+                    arguments[i](this.prototype);
+                } else {
+                    // add the interface using the extend method
+                    this.prototype.extend(arguments[i]);
+                }
+            }
+            return this;
+        },
+
+        toString: function () {
+            return String(this.valueOf());
+        }
+    });
+//////////////////////////////////////////////////////
+var Context = Base.extend({
+    constructor: function (contextId) {
+        this.contextId = contextId;
+    },
+    contextId: 0
+});
+var Activity = Context.extend({
+    constructor: function (contextId) {
+        this.base(contextId);
+        this.activiyId = contextId;
+    },
+    activiyId: 0,
+    findViewById: function (viewId) {
+        var argsJson = createJArgsJson(createJArg("I", viewId));
+        return exec(this.activiyId, "findViewById", argsJson);
+    }
+});
+
+var View = Base.extend({
+    constructor: function (context) {
+        this.context = context;
+        this.contextId = context.contextId;
+        console.log(this.jClassId);
+        console.log(arguments[1])
+        this.jViewId = arguments[1] || newJobj(this.jClassId, createJArgsJson(createJArg(this.contextClassId, this.contextId)));
+    },
+    contextClassId: "Landroid/content/Context",
+    jViewId: 0,
+    jClassId: "Landroid/view/View",
+    setLayoutParams: function (jLayoutParamsId) {
+        var argsJson = createJArgsJson(createJArg("Landroid/view/ViewGroup/LayoutParams", jLayoutParamsId));
+        exec(jViewId, "setLayoutParams", argsJson);
+    },
+    findViewById: function (viewId) {
+        var argsJson = createJArgsJson(createJArg("I", viewId));
+        return exec(this.jViewId, "findViewById", argsJson);
+    },
+    setId: function (viewId) {
+        var argsJson = createJArgsJson(createJArg("I", viewId));
+        return exec(this.jViewId, "setId", argsJson);
+    }
+});
+
+var RecycleView = View.extend({
+    jClassId: "Landroid/support/v7/widget/RecyclerView"
+});
+
+var TextView = View.extend({
+    constructor: function (context) {
+        this.base(context);
+    },
+    jClassId: "Landroid/widget/TextView",
+    setTextColor: function (color) {
+        var argsJson = createJArgsJson(createJArg("I", color));
+        exec(this.jViewId, "setTextColor", argsJson);
+    },
+    setText:function(string){
+        var argsJson = createJArgsJson(createJArg("Ljava/lang/CharSequence", string));
+        exec(this.jViewId,"setText",argsJson)
+    }
+});
+
+
+var ViewGroup = View.extend({
+    addView: function (view) {
+
+        var argsJson = createJArgsJson(createJArg("Landroid/view/View", view.jViewId));
+        console.log(view.jViewId);
+        console.log(argsJson);
+        exec(this.jViewId, "addView", argsJson, 1);
+    }
+});
+
+
 
 function showMessage(json) {
     var name = json.name;
@@ -8,26 +222,28 @@ function showMessage(json) {
 }
 
 function clickFunc() {
+    // var objId = getObjId("Landroid/content/Context");
+    // var toastMsg = "Ok";
+    // var objClassType = "Landroid/widget/Toast";
+    // var toastArgArrayObj = createJArgsJson(createJArg("Landroid/content/Context", objId), createJArg("Ljava/lang/CharSequence", toastMsg), createJArg("I", 0));
+    // console.log(toastArgArrayObj)
+    // var toastId = staticExec(objClassType, "makeText", toastArgArrayObj, 0);
+    // exec(toastId, "show", null, 1);
+    var activity = new Activity(getActivity());
+    var textview = new TextView(activity);
+    var viewGroupId = activity.findViewById(1);
+    console.log(viewGroupId);
+    var viewGroup = new ViewGroup(getActivity(), viewGroupId);
+    textview.setTextColor(0xff0000ff);
+    textview.setText("来自javascript创建");
+    viewGroup.addView(textview);
 
-    var objId = getObjId("Landroid/content/Context");
-    var toastMsg = "Ok";
-    var objClassType = "Landroid/widget/Toast";
-    var toastArgArrayObj = createJArgsJson(createJArg("Landroid/content/Context", objId), createJArg("Ljava/lang/CharSequence", toastMsg), createJArg("I", 0));
-    console.log(toastArgArrayObj)
-    var toastId = staticExec(objClassType, "makeText", toastArgArrayObj, 0);
-    exec(toastId, "show", null, 1);
 }
 
-function TextView(contextId) {
-    this.contextId = contextId;
-    this.classId = "Landroid/widget/TextView"
-    this.argsJson = createJArgsJson(createJArg("Landroid/content/Context", contextId))
-    this.jTextViewId = newJobj(classId, argsJson)
-}
 
 function createJArg(classId, argValue) {
     var arg = {};
-    arg[classId] = argValue
+    arg[classId] = argValue;
     return arg;
 }
 
@@ -57,4 +273,7 @@ function getObjId(classId) {
 //初始化一个java对象
 function newJobj(classId, argsJson) {
     return window.JsInterface.newJobj(classId, argsJson);
+}
+function getActivity() {
+    return window.JsInterface.getActivity();
 }

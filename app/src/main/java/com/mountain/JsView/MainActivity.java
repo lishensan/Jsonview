@@ -3,10 +3,13 @@ package com.mountain.JsView;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import org.json.JSONException;
@@ -20,6 +23,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ViewGroup viewById = (ViewGroup) findViewById(R.id.rl_content);
+        viewById.setId(1);
+
         TextView textView = (TextView) findViewById(R.id.text);
         mWebview = (WebView) findViewById(R.id.wv);
 
@@ -61,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        mWebview.addJavascriptInterface(new JavaScriptInterface(textView), "JsInterface");
+        mWebview.addJavascriptInterface(new JavaScriptInterface(viewById), "JsInterface");
 
         mWebview.loadUrl("file:///android_asset/index.html");//本地模板
 //        mWebview.loadUrl("http://");//在线模板
