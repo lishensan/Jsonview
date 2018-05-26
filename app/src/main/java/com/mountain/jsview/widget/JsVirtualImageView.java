@@ -76,6 +76,8 @@ public class JsVirtualImageView extends JsVirtualView<ImageView> {
 
     @Override
     public ImageView createNativeView(Context context, ViewGroup.LayoutParams params) {
-        return new ImageView(context);
+        ImageView imageView = new ImageView(context);
+        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        return imageView;
     }
 }

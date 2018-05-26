@@ -46,8 +46,15 @@ public class JsVirtualView<T extends View> implements INativeViewCreator<T> {
 
     }
 
-    public void setLayoutParams(String layoutParamsJson) {
-        mLayoutParams = JsonUtil.fromJson(layoutParamsJson, LayoutParams.class);
+    public final void setLayoutParams(String layoutParamsJson) {
+        mLayoutParams = createLayoutParams(layoutParamsJson);
+    }
+
+    protected LayoutParams createLayoutParams(String layoutParamsJson) {
+        if (parent != null) {
+            return parent.createLayoutParams(layoutParamsJson);
+        }
+        return JsonUtil.fromJson(layoutParamsJson, LayoutParams.class);
     }
 
     public void batchSetAttr() {
@@ -76,11 +83,6 @@ public class JsVirtualView<T extends View> implements INativeViewCreator<T> {
     public void setBackgroundDrawable(Drawable background) {
         backgroundFlag = true;
         this.background = background;
-    }
-
-    public void setLayoutParams(ViewGroup.LayoutParams params) {
-        paramsFlag = true;
-        this.params = params;
     }
 
     public void setAlpha(float alpha) {
@@ -160,20 +162,25 @@ public class JsVirtualView<T extends View> implements INativeViewCreator<T> {
             if (idFlag) {
                 nativeView.setId(id);
             }
-            updateLayoutParams(nativeView);
+            updateLayoutParams(nativeView, mLayoutParams);
         }
     }
 
-    protected void updateLayoutParams(T nativeView){
-        ViewGroup.LayoutParams layoutParams = nativeView.getLayoutParams();
-        if (layoutParams != null && this.mLayoutParams != null) {
-            if (mLayoutParams.width != null) {
-                layoutParams.width = mLayoutParams.width;
+    protected void updateLayoutParams(View nativeView, LayoutParams vLayoutParams) {
+        if (parent != null) {
+            //父类处理属性，更新到子控件
+            parent.updateLayoutParams(nativeView, vLayoutParams);
+        } else {
+            ViewGroup.LayoutParams layoutParams = nativeView.getLayoutParams();
+            if (layoutParams != null && vLayoutParams != null) {
+                if (vLayoutParams.width != null) {
+                    layoutParams.width = vLayoutParams.width;
+                }
+                if (vLayoutParams.height != null) {
+                    layoutParams.height = vLayoutParams.height;
+                }
+                //TODO:
             }
-            if (mLayoutParams.height != null) {
-                layoutParams.height = mLayoutParams.height;
-            }
-            //TODO:
         }
     }
 

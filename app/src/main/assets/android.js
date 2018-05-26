@@ -315,6 +315,10 @@ var VirtualViewGroup = VirtualView.extend({
 });
 var VirtualLinearLayout = VirtualViewGroup.extend({
     jClassId: JsVirtualLinearLayoutClassId,
+    setOrientation:function(orientation){
+        var argsJson = createJArgsJson(createJArg("I", orientation));
+        exec(this.jVirtualViewId, "setOrientation", argsJson)
+    }
 });
 
 

@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                mWebview.loadUrl("javascript:createReycleViewAdapter()");
+                mWebview.loadUrl("javascript:createReycleViewAdapter2()");
             }
         });
 
