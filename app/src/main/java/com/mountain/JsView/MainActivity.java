@@ -3,17 +3,12 @@ package com.mountain.JsView;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
+import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,13 +19,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ViewGroup viewById = (ViewGroup) findViewById(R.id.rl_content);
-        viewById.setId(1);
-
+        JsInterface jsInterface = new JsInterface(viewById);
+        mWebview = jsInterface.getJsEngine().getWebView();
         TextView textView = (TextView) findViewById(R.id.text);
-        mWebview = (WebView) findViewById(R.id.wv);
 
-        WebSettings settings = mWebview.getSettings();
-        settings.setJavaScriptEnabled(true);//打开js和安卓通信
+
         mWebview.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -40,17 +33,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-
-                try {
-                    //当页面加载完成后，调用js方法
-                    //mWebview.loadUrl("javascript:方法名(参数)");
-                    JSONObject json = new JSONObject();
-                    json.put("name", "安卓");
-                    json.put("city", "上海");
-                    mWebview.loadUrl("javascript:showMessage("+json.toString()+")");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                mWebview.loadUrl("javascript:createReycleViewAdapter()");
             }
         });
 
@@ -66,10 +49,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mWebview.addJavascriptInterface(jsInterface, "JsInterface");
 
-        mWebview.addJavascriptInterface(new JavaScriptInterface(viewById), "JsInterface");
 
-        mWebview.loadUrl("file:///android_asset/index.html");//本地模板
-//        mWebview.loadUrl("http://");//在线模板
     }
 }

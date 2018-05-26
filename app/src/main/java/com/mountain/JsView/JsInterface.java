@@ -2,9 +2,12 @@ package com.mountain.JsView;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.SparseArray;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -15,28 +18,47 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Iterator;
 
 
-public class JavaScriptInterface<T extends View> {
+public class JsInterface<T extends ViewGroup> {
+    private static final String TAG = "JsInterface";
     private Handler mHandler = new Handler(Looper.getMainLooper());
     private T t;
-    private SparseArray<SoftReference<Object>> mObjectSparseArray = new SparseArray<>();
+    private HashMap<Integer,SoftReference<Object>> mObjectSparseArray = new HashMap<>();
+    private JsEngine mJsEngine;
 
-
-    public JavaScriptInterface(T t) {
+    private int contextId;
+    private int contentId;
+    private int jsInterfaceId;
+    public JsInterface(T t) {
         this.t = t;
-        mObjectSparseArray.put(t.getContext().hashCode(), new SoftReference<Object>(t.getContext()));
-        mObjectSparseArray.put(t.hashCode(), new SoftReference<Object>(t));
+        contextId = registObj(t.getContext());
+        contentId =  registObj(t);
+        jsInterfaceId = registObj(this);
+        WebView webView = new WebView(t.getContext());
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);//打开js和安卓通信
+        mJsEngine = new JsEngine(webView);
+        webView.loadUrl("file:///android_asset/index.html");//本地模板
+//      mWebView.loadData("jsfile", "text/html", null);
+//      mWebview.loadUrl("http://");//在线模板
+    }
+
+
+    public JsEngine getJsEngine() {
+        return mJsEngine;
     }
 
     @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
     public int newJobj(final String classType, final String argsJson) {
+        Log.d(TAG,classType+"  "+argsJson);
         if (classType != null) {
             try {
                 Object o;
                 Class<?> aClass = getClassFromType(classType);
-                if (argsJson != null) {
+                if (argsJson != null && argsJson.startsWith("[")) {
                     JSONArray jsonArray = new JSONArray(argsJson);
                     int length = jsonArray.length();
                     Class[] classes = new Class[length];
@@ -49,9 +71,7 @@ public class JavaScriptInterface<T extends View> {
                     constructor = aClass.getConstructor();
                     o = constructor.newInstance();
                 }
-                int hashCode = o.hashCode();
-                mObjectSparseArray.put(hashCode, new SoftReference<>(o));
-                return hashCode;
+                return registObj(o);
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
@@ -80,9 +100,22 @@ public class JavaScriptInterface<T extends View> {
     @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
     public int getObjId(String classId) {
         if ("Landroid/content/Context".equals(classId)) {
-            return t.getContext().hashCode();
+            return contextId;
+        } else if ("this".equals(classId)) {
+            return jsInterfaceId;
         }
         return 0;
+    }
+
+
+    /**
+     * 注册对象
+     */
+    public int registObj(Object object) {
+        SoftReference<Object> objectSoftReference = new SoftReference<>(object);
+        int hashCode = objectSoftReference.hashCode();
+        mObjectSparseArray.put(hashCode,objectSoftReference);
+        return hashCode;
     }
 
     /**
@@ -90,7 +123,28 @@ public class JavaScriptInterface<T extends View> {
      */
     @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
     public int getActivity() {
-        return t.getContext().hashCode();
+        return contextId;
+    }
+
+    /**
+     * 获取一些通用上下文对象
+     */
+    @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
+    public int getContentView() {
+        return contentId;
+    }
+
+    /**
+     * 获取一些通用上下文对象
+     */
+    @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
+    public void addView(int viewObjId) {
+        SoftReference<Object> objectSoftReference = mObjectSparseArray.get(viewObjId);
+        Object o = objectSoftReference.get();
+        if (o instanceof View) {
+            View view = (View) o;
+            t.addView(view);
+        }
     }
 
     private Class getClassFromType(String classType) throws ClassNotFoundException {
@@ -224,18 +278,14 @@ public class JavaScriptInterface<T extends View> {
                 Object invoke = method.invoke(object, argValues);
                 method.setAccessible(false);
                 if (invoke != null) {
-                    int returnObjId = invoke.hashCode();
-                    mObjectSparseArray.put(returnObjId, new SoftReference<Object>(invoke));
-                    return returnObjId;
+                    return registObj(invoke);
                 }
             } else {
                 Method method = execObjClazz.getMethod(methodName);
                 Object invoke = method.invoke(object);
                 method.setAccessible(false);
                 if (invoke != null) {
-                    int returnObjId = invoke.hashCode();
-                    mObjectSparseArray.put(returnObjId, new SoftReference<Object>(invoke));
-                    return returnObjId;
+                    return registObj(invoke);
                 }
             }
         } catch (NoSuchMethodException e) {
@@ -269,7 +319,14 @@ public class JavaScriptInterface<T extends View> {
                         argValues[i] = getPrimitiveValue(argType, argValue);
                     } else {
                         int objHash = Integer.parseInt(argValue);
-                        argValues[i] = mObjectSparseArray.get(objHash).get();
+                        SoftReference<Object> objectSoftReference = mObjectSparseArray.get(objHash);
+                        if (objectSoftReference != null) {
+                            argValues[i] = objectSoftReference.get();
+                        } else {
+                            if (clazz == Object.class) {
+                                argValues[i] = argValue;
+                            }
+                        }
                     }
                 }
             }

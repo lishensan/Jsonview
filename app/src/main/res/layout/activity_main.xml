@@ -9,16 +9,11 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     >
-    <LinearLayout
+    <FrameLayout
         android:orientation="vertical"
         android:id="@+id/rl_content"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        >
-    </LinearLayout>
-    <WebView
-        android:id="@+id/wv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        />
+        >
+    </FrameLayout>
 </LinearLayout>

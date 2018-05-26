@@ -161,7 +161,6 @@ var View = Base.extend({
         this.context = context;
         this.contextId = context.contextId;
         console.log(this.jClassId);
-        console.log(arguments[1])
         this.jViewId = arguments[1] || newJobj(this.jClassId, createJArgsJson(createJArg(this.contextClassId, this.contextId)));
     },
     contextClassId: "Landroid/content/Context",
@@ -169,7 +168,7 @@ var View = Base.extend({
     jClassId: "Landroid/view/View",
     setLayoutParams: function (jLayoutParamsId) {
         var argsJson = createJArgsJson(createJArg("Landroid/view/ViewGroup/LayoutParams", jLayoutParamsId));
-        exec(jViewId, "setLayoutParams", argsJson);
+        exec(jViewId, "setLayoutParams", argsJson, 1);
     },
     findViewById: function (viewId) {
         var argsJson = createJArgsJson(createJArg("I", viewId));
@@ -182,21 +181,37 @@ var View = Base.extend({
 });
 
 var RecycleView = View.extend({
-    jClassId: "Landroid/support/v7/widget/RecyclerView"
+    jClassId: "Lcom/mountain/JsView/recycleview/JsRecycleView",
+    setAdapter: function (adapter) {
+        var argsJson = createJArgsJson(createJArg("Lcom/mountain/JsView/recycleview/JsRecycleViewAdapter", adapter));
+        exec(this.jViewId, "setAdapter", argsJson, 1);
+    },
+    setLayoutManager: function (layoutManager) {
+        var argsJson = createJArgsJson(createJArg("Landroid/support/v7/widget/RecyclerView$LayoutManager", layoutManager));
+        exec(this.jViewId, "setLayoutManager", argsJson, 1);
+    },
+    createLinearLayoutManager: function () {
+        var argsJson = createJArgsJson(createJArg(this.contextClassId, this.contextId));
+        return newJobj("Lcom/mountain/JsView/recycleview/JsLinearLayoutManager", argsJson)
+    }
 });
 
+
+
 var TextView = View.extend({
-    constructor: function (context) {
-        this.base(context);
-    },
     jClassId: "Landroid/widget/TextView",
     setTextColor: function (color) {
         var argsJson = createJArgsJson(createJArg("I", color));
-        exec(this.jViewId, "setTextColor", argsJson);
+        exec(this.jViewId, "setTextColor", argsJson, 1);
     },
-    setText:function(string){
+    setText: function (string) {
         var argsJson = createJArgsJson(createJArg("Ljava/lang/CharSequence", string));
-        exec(this.jViewId,"setText",argsJson)
+        exec(this.jViewId, "setText", argsJson, 1)
+    },
+    //sp
+    setTextSize: function (size) {
+        var argsJson = createJArgsJson(createJArg("F", size));
+        exec(this.jViewId, "setTextSize", argsJson, 1)
     }
 });
 
@@ -221,22 +236,62 @@ function showMessage(json) {
     console.log("name=" + name + ",city=" + city);
 }
 
-function clickFunc() {
-    // var objId = getObjId("Landroid/content/Context");
-    // var toastMsg = "Ok";
-    // var objClassType = "Landroid/widget/Toast";
-    // var toastArgArrayObj = createJArgsJson(createJArg("Landroid/content/Context", objId), createJArg("Ljava/lang/CharSequence", toastMsg), createJArg("I", 0));
-    // console.log(toastArgArrayObj)
-    // var toastId = staticExec(objClassType, "makeText", toastArgArrayObj, 0);
-    // exec(toastId, "show", null, 1);
+function createTextView() {
     var activity = new Activity(getActivity());
     var textview = new TextView(activity);
-    var viewGroupId = activity.findViewById(1);
+    var viewGroupId = getContentView();
     console.log(viewGroupId);
     var viewGroup = new ViewGroup(getActivity(), viewGroupId);
     textview.setTextColor(0xff0000ff);
     textview.setText("来自javascript创建");
     viewGroup.addView(textview);
+
+}
+
+function createReycleViewAdapter() {
+    var activity = new Activity(getActivity());
+    var recycleView = new RecycleView(activity);
+    var viewGroupId = activity.findViewById(1);
+    var jsRecycleViewAdapter = newJobj("Lcom/mountain/JsView/recycleview/JsRecycleViewAdapter");
+    var models = newJobj("Ljava/util/ArrayList");
+    var argsJson = createJArgsJson(createJArg("Lcom/mountain/JsView/JsInterface", getJsInterface()));
+    var jsViewModelBridge = newJobj("Lcom/mountain/JsView/JsViewModelBridge", argsJson);
+    var len = 100;
+    var i = 0;
+    for (; i < len; i++) {
+        var dataSource = newJobj("Lcom/mountain/JsView/recycleview/DataSource");
+        var argsJson = createJArgsJson(createJArg("Ljava/lang/String", "meta"), createJArg("Ljava/lang/Object", i));
+        exec(dataSource, "putData", argsJson);
+        var argsJson = createJArgsJson(createJArg("Lcom/mountain/JsView/recycleview/DataSource", dataSource),
+            createJArg("Lcom/mountain/JsView/IJsViewModelBridge", jsViewModelBridge));
+        var model = newJobj("Lcom/mountain/JsView/recycleview/impl/ViewModel", argsJson)
+        var argsJson = createJArgsJson(createJArg("Ljava/lang/Object", model));
+        exec(models, "add", argsJson, model);
+    }
+    var argsJson = createJArgsJson(createJArg("Ljava/util/List", models));
+    exec(jsRecycleViewAdapter, "setViewModels", argsJson);
+
+    var viewGroup = new ViewGroup(activity, getContentView());
+    console.log("putData6")
+    var linearLayoutManager = recycleView.createLinearLayoutManager();
+    recycleView.setLayoutManager(linearLayoutManager);
+    recycleView.setAdapter(jsRecycleViewAdapter);
+    viewGroup.addView(recycleView)
+
+}
+
+function onBindViewHolder(jObjId, data) {
+    console.log(jObjId);
+    var meta = data.dataSouce.meta;
+    console.log(meta);
+    var argsJson = createJArgsJson(createJArg("I", 0));
+    var textViewId = exec(jObjId, "getViewByPostition", argsJson);
+    console.log(textViewId);
+    var textview = new TextView(getActivity(), textViewId);
+    textview.setText("来自js "+meta);
+    textview.setTextColor(0xffff0000);
+    textview.setTextSize(20);
+
 
 }
 
@@ -270,6 +325,15 @@ function staticExec(classId, methodName, argsJson, thread) {
 function getObjId(classId) {
     return window.JsInterface.getObjId(classId);
 }
+//获取环境默认类对象的hash
+function getJsInterface() {
+    return window.JsInterface.getObjId("this");
+}
+//当前添加viewGroup
+function getContentView() {
+    return window.JsInterface.getContentView();
+}
+
 //初始化一个java对象
 function newJobj(classId, argsJson) {
     return window.JsInterface.newJobj(classId, argsJson);
