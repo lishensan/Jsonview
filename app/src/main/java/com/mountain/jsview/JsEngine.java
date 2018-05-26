@@ -1,4 +1,4 @@
-package com.mountain.JsView;
+package com.mountain.jsview;
 
 import android.util.Log;
 import android.webkit.WebView;

@@ -1,8 +1,7 @@
-package com.mountain.JsView.recycleview;
+package com.mountain.jsview.recycleview;
 
 import com.google.gson.Gson;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DataSource {
@@ -21,12 +20,13 @@ public class DataSource {
         return dataSouce.remove(key);
     }
 
-    public Object getData(String key){
+    public Object getData(String key) {
         return dataSouce.get(key);
     }
-    public static void main(String[] args){
+
+    public static void main(String[] args) {
         DataSource dataSource = new DataSource();
-        dataSource.putData("meta","nihao");
+        dataSource.putData("meta", "nihao");
         Gson gson = new Gson();
         String s = gson.toJson(dataSource);
         System.out.println(s);

@@ -1,4 +1,4 @@
-package com.mountain.JsView;
+package com.mountain.jsview;
 
 import org.junit.Test;
 

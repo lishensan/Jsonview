@@ -1,4 +1,4 @@
-package com.mountain.JsView;
+package com.mountain.jsview;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

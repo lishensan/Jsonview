@@ -1,18 +1,20 @@
-package com.mountain.JsView.recycleview;
+package com.mountain.jsview.recycleview;
 
 import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
 import android.view.ViewGroup;
 
-import com.mountain.JsView.recycleview.impl.ViewHolder;
-import com.mountain.JsView.recycleview.impl.ViewModel;
+import com.mountain.jsview.recycleview.impl.ViewHolder;
+import com.mountain.jsview.recycleview.impl.ViewModel;
 
 import java.util.List;
 
 public class JsRecycleViewAdapter extends RecyclerView.Adapter<ViewHolder> {
     private List<ViewModel> mViewModels;
+    private ViewHolderManager mViewHolderManager;
 
     public JsRecycleViewAdapter() {
+        mViewHolderManager = new ViewHolderManager();
     }
 
     public void setViewModels(List<ViewModel> viewModels) {
@@ -21,7 +23,15 @@ public class JsRecycleViewAdapter extends RecyclerView.Adapter<ViewHolder> {
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return ViewHolderManager.getInstance().getViewHolderManager(viewType).onCreateViewHolder(parent, viewType);
+        return mViewHolderManager.getViewHolderManager(viewType).onCreateViewHolder(parent, viewType);
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        ViewModel viewModel = mViewModels.get(position);
+        int viewType = viewModel.getViewType();
+        mViewHolderManager.registViewHolderCreater(viewType, viewModel);
+        return viewType;
     }
 
     @Override

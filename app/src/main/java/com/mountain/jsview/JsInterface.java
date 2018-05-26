@@ -1,8 +1,8 @@
-package com.mountain.JsView;
+package com.mountain.jsview;
 
+import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
@@ -10,12 +10,16 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.socks.library.KLog;
+import com.socks.library.klog.XmlLog;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -26,16 +30,17 @@ public class JsInterface<T extends ViewGroup> {
     private static final String TAG = "JsInterface";
     private Handler mHandler = new Handler(Looper.getMainLooper());
     private T t;
-    private HashMap<Integer,SoftReference<Object>> mObjectSparseArray = new HashMap<>();
+    private HashMap<Integer, SoftReference<Object>> mObjectSparseArray = new HashMap<>();
     private JsEngine mJsEngine;
 
     private int contextId;
     private int contentId;
     private int jsInterfaceId;
+
     public JsInterface(T t) {
         this.t = t;
         contextId = registObj(t.getContext());
-        contentId =  registObj(t);
+        contentId = registObj(t);
         jsInterfaceId = registObj(this);
         WebView webView = new WebView(t.getContext());
         WebSettings settings = webView.getSettings();
@@ -53,7 +58,7 @@ public class JsInterface<T extends ViewGroup> {
 
     @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
     public int newJobj(final String classType, final String argsJson) {
-        Log.d(TAG,classType+"  "+argsJson);
+        KLog.d(TAG, classType + "  " + argsJson);
         if (classType != null) {
             try {
                 Object o;
@@ -114,7 +119,7 @@ public class JsInterface<T extends ViewGroup> {
     public int registObj(Object object) {
         SoftReference<Object> objectSoftReference = new SoftReference<>(object);
         int hashCode = objectSoftReference.hashCode();
-        mObjectSparseArray.put(hashCode,objectSoftReference);
+        mObjectSparseArray.put(hashCode, objectSoftReference);
         return hashCode;
     }
 
@@ -208,7 +213,7 @@ public class JsInterface<T extends ViewGroup> {
 
 
     @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
-    public int exec(int objId, final String methodName, final String argsJson, int thread) {
+    public double exec(int objId, final String methodName, final String argsJson, int thread) {
         SoftReference<Object> objectSoftReference = mObjectSparseArray.get(objId);
         Object object = null;
         if (objectSoftReference != null) {
@@ -221,7 +226,7 @@ public class JsInterface<T extends ViewGroup> {
             //UIThread
             synchronized (object) {
                 try {
-                    MainTheadExecRunnable mainTheadExecRunnable = new MainTheadExecRunnable(object, methodName, argsJson);
+                    MainTheadExecRunnable mainTheadExecRunnable = new MainTheadExecRunnable(true, object, methodName, argsJson);
                     mHandler.post(mainTheadExecRunnable);
                     object.wait();
                     return mainTheadExecRunnable.getResult();
@@ -232,20 +237,50 @@ public class JsInterface<T extends ViewGroup> {
 
 
         } else {
-            return exec(object, object.getClass(), methodName, argsJson);
+            return exec(true, object, object.getClass(), methodName, argsJson);
         }
         return 0;
     }
 
     @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
-    public int staticExec(String classId, final String methodName, final String argsJson, int thread) {
+    public double set(int objId, final String fieldName, final String argsJson, int thread) {
+        SoftReference<Object> objectSoftReference = mObjectSparseArray.get(objId);
+        Object object = null;
+        if (objectSoftReference != null) {
+            object = objectSoftReference.get();
+        }
+        if (object == null) {
+            return 0;
+        }
+        if (thread == 1) {
+            //UIThread
+            synchronized (object) {
+                try {
+                    MainTheadExecRunnable mainTheadExecRunnable = new MainTheadExecRunnable(false, object, fieldName, argsJson);
+                    mHandler.post(mainTheadExecRunnable);
+                    object.wait();
+                    return mainTheadExecRunnable.getResult();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+        } else {
+            return exec(false, object, object.getClass(), fieldName, argsJson);
+        }
+        return 0;
+    }
+
+    @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
+    public double staticExec(String classId, final String methodName, final String argsJson, int thread) {
         try {
             Class classFromType = getClassFromType(classId);
             if (thread == 1) {
                 //UIThread
                 synchronized (classFromType) {
                     try {
-                        MainTheadExecStaticRunnable mainTheadExecRunnable = new MainTheadExecStaticRunnable(classFromType, methodName,
+                        MainTheadExecStaticRunnable mainTheadExecRunnable = new MainTheadExecStaticRunnable(true, classFromType, methodName,
                                 argsJson);
                         mHandler.post(mainTheadExecRunnable);
                         classFromType.wait();
@@ -257,7 +292,7 @@ public class JsInterface<T extends ViewGroup> {
 
 
             } else {
-                return exec(null, classFromType, methodName, argsJson);
+                return exec(true, null, classFromType, methodName, argsJson);
             }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -265,7 +300,17 @@ public class JsInterface<T extends ViewGroup> {
         return 0;
     }
 
-    private int exec(Object object, Class execObjClazz, final String methodName, final String argsJson) {
+    /**
+     * @param isMethod 是否是方法调用
+     * @param object 调用的对象
+     * @param execObjClazz 调用的class
+     * @param name 对应的名字（方法名，或者字段名字）
+     * @param argsJson 参数
+     *
+     * return 结果的软引用
+     */
+    private double exec(boolean isMethod, Object object, Class execObjClazz, final String name, final String argsJson) {
+        KLog.d(TAG, isMethod, object, execObjClazz, name, argsJson);
         try {
             if (argsJson != null) {
                 JSONArray jsonArray = new JSONArray(argsJson);
@@ -273,31 +318,38 @@ public class JsInterface<T extends ViewGroup> {
                 Class[] classes = new Class[length];
                 Object[] argValues = new Object[length];
                 extraExecParams(jsonArray, classes, argValues);
-                Method method = execObjClazz.getMethod(methodName, classes);
-                method.setAccessible(true);
-                Object invoke = method.invoke(object, argValues);
-                method.setAccessible(false);
-                if (invoke != null) {
-                    return registObj(invoke);
+                if (isMethod) {
+                    Method method = execObjClazz.getMethod(name, classes);
+                    method.setAccessible(true);
+                    Object invoke = method.invoke(object, argValues);
+                    method.setAccessible(false);
+                    if (invoke != null) {
+                        if (!invoke.getClass().isPrimitive()) {
+                            return registObj(invoke);
+                        } else {
+                            try {
+                                return (double) invoke;
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                } else {
+                    Field field = execObjClazz.getField(name);
+                    if (field != null) {
+                        field.set(object, argValues[0]);
+                    }
                 }
             } else {
-                Method method = execObjClazz.getMethod(methodName);
+                Method method = execObjClazz.getMethod(name);
                 Object invoke = method.invoke(object);
                 method.setAccessible(false);
                 if (invoke != null) {
                     return registObj(invoke);
                 }
             }
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         return 0;
     }
@@ -337,26 +389,28 @@ public class JsInterface<T extends ViewGroup> {
         Object mObject;
         String mMethod;
         String mArgsJson;
-        int result;
+        double result;
+        boolean isMethod;
 
-        public MainTheadExecRunnable(Object object, final String methodName, final String argsJson) {
-            setObject(object, methodName, argsJson);
+        public MainTheadExecRunnable(boolean isMethod, Object object, final String methodName, final String argsJson) {
+            setObject(isMethod, object, methodName, argsJson);
         }
 
-        public void setObject(Object object, final String methodName, final String argsJson) {
+        public void setObject(boolean isMethod, Object object, final String methodName, final String argsJson) {
+            this.isMethod = isMethod;
             this.mObject = object;
             this.mMethod = methodName;
             this.mArgsJson = argsJson;
         }
 
-        public int getResult() {
+        public double getResult() {
             return result;
         }
 
         @Override
         public void run() {
             synchronized (mObject) {
-                result = exec(mObject, mObject.getClass(), mMethod, mArgsJson);
+                result = exec(isMethod, mObject, mObject.getClass(), mMethod, mArgsJson);
                 mObject.notify();
             }
         }
@@ -366,26 +420,28 @@ public class JsInterface<T extends ViewGroup> {
         Class mClassType;
         String mMethod;
         String mArgsJson;
-        int result;
+        double result;
+        boolean isMethod;
 
-        public MainTheadExecStaticRunnable(Class classType, final String methodName, final String argsJson) {
-            setObject(classType, methodName, argsJson);
+        public MainTheadExecStaticRunnable(boolean isMethod, Class classType, final String methodName, final String argsJson) {
+            setObject(isMethod, classType, methodName, argsJson);
         }
 
-        public void setObject(Class classType, final String methodName, final String argsJson) {
+        public void setObject(boolean isMethod, Class classType, final String methodName, final String argsJson) {
             this.mClassType = classType;
             this.mMethod = methodName;
             this.mArgsJson = argsJson;
+            this.isMethod = isMethod;
         }
 
-        public int getResult() {
+        public double getResult() {
             return result;
         }
 
         @Override
         public void run() {
             synchronized (mClassType) {
-                result = exec(null, mClassType, mMethod, mArgsJson);
+                result = exec(isMethod, null, mClassType, mMethod, mArgsJson);
                 mClassType.notify();
             }
         }

@@ -1,4 +1,4 @@
-package com.mountain.JsView;
+package com.mountain.jsview;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;

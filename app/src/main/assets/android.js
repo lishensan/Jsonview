@@ -181,9 +181,9 @@ var View = Base.extend({
 });
 
 var RecycleView = View.extend({
-    jClassId: "Lcom/mountain/JsView/recycleview/JsRecycleView",
+    jClassId: "Lcom/mountain/jsview/recycleview/JsRecycleView",
     setAdapter: function (adapter) {
-        var argsJson = createJArgsJson(createJArg("Lcom/mountain/JsView/recycleview/JsRecycleViewAdapter", adapter));
+        var argsJson = createJArgsJson(createJArg(JsRecycleViewAdapterClassId, adapter));
         exec(this.jViewId, "setAdapter", argsJson, 1);
     },
     setLayoutManager: function (layoutManager) {
@@ -192,7 +192,7 @@ var RecycleView = View.extend({
     },
     createLinearLayoutManager: function () {
         var argsJson = createJArgsJson(createJArg(this.contextClassId, this.contextId));
-        return newJobj("Lcom/mountain/JsView/recycleview/JsLinearLayoutManager", argsJson)
+        return newJobj("Lcom/mountain/jsview/recycleview/JsLinearLayoutManager", argsJson)
     }
 });
 
@@ -205,7 +205,7 @@ var TextView = View.extend({
         exec(this.jViewId, "setTextColor", argsJson, 1);
     },
     setText: function (string) {
-        var argsJson = createJArgsJson(createJArg("Ljava/lang/CharSequence", string));
+        var argsJson = createJArgsJson(createJArg(CharSequenceClassId, string));
         exec(this.jViewId, "setText", argsJson, 1)
     },
     //sp
@@ -248,36 +248,115 @@ function createTextView() {
 
 }
 
+
+var JsVirtualViewClassId = "Lcom/mountain/jsview/widget/JsVirtualView";
+var JsVirtualTextViewClassId = "Lcom/mountain/jsview/widget/JsVirtualTextView";
+var JsVirtualImageViewClassId = "Lcom/mountain/jsview/widget/JsVirtualImageView";
+var JsVirtualViewGroupClassId = "Lcom/mountain/jsview/widget/JsVirtualViewGroup";
+var JsVirtualLinearLayoutClassId = "Lcom/mountain/jsview/widget/JsVirtualLinearLayout";
+var CharSequenceClassId = "Ljava/lang/CharSequence";
+var StringClassId = "Ljava/lang/String";
+var ArrayListClassId = "Ljava/util/ArrayList";
+var ListClassId = "Ljava/util/List";
+var ViewModelClassId = "Lcom/mountain/jsview/recycleview/impl/ViewModel";
+var ObjectClassId = "Ljava/lang/Object";
+var JsRecycleViewAdapterClassId = "Lcom/mountain/jsview/recycleview/JsRecycleViewAdapter";
+
+var VirtualView = Base.extend({
+    constructor: function () {
+        console.log(this.jClassId);
+        this.jVirtualViewId = arguments[1] || newJobj(this.jClassId);
+    },
+    jVirtualViewId: 0,
+    jClassId: JsVirtualViewClassId,
+    setId: function (viewId) {
+        var argsJson = createJArgsJson(createJArg("I", viewId));
+        return exec(this.jVirtualViewId, "setId", argsJson);
+    },
+    setLayoutParams: function (layoutParams) {
+        var argsJson = createJArgsJson(createJArg(StringClassId, layoutParams));
+        return exec(this.jVirtualViewId, "setLayoutParams", argsJson);
+    }
+});
+
+var VirtualTextView = VirtualView.extend({
+    jClassId: JsVirtualTextViewClassId,
+    setTextColor: function (color) {
+        var argsJson = createJArgsJson(createJArg("I", color));
+        exec(this.jVirtualViewId, "setTextColor", argsJson);
+    },
+    setText: function (string) {
+        var argsJson = createJArgsJson(createJArg(CharSequenceClassId, string));
+        exec(this.jVirtualViewId, "setText", argsJson)
+    },
+    //sp
+    setTextSize: function (size) {
+        var argsJson = createJArgsJson(createJArg("F", size));
+        exec(this.jVirtualViewId, "setTextSize", argsJson)
+    }
+});
+var VirtualImageView = VirtualView.extend({
+    jClassId: JsVirtualImageViewClassId,
+    setImageUrl: function (string) {
+        var argsJson = createJArgsJson(createJArg(StringClassId, string));
+        exec(this.jVirtualViewId, "setImageUrl", argsJson)
+    }
+});
+var VirtualViewGroup = VirtualView.extend({
+    jClassId: JsVirtualViewGroupClassId,
+    addView: function (virtualView) {
+        var argsJson = createJArgsJson(createJArg(JsVirtualViewClassId, virtualView.jVirtualViewId));
+        exec(this.jVirtualViewId, "addView", argsJson)
+    },
+    removeView: function (virtualView) {
+        var argsJson = createJArgsJson(createJArg(JsVirtualViewClassId, virtualView.jVirtualViewId));
+        exec(this.jVirtualViewId, "removeView", argsJson)
+    }
+});
+var VirtualLinearLayout = VirtualViewGroup.extend({
+    jClassId: JsVirtualLinearLayoutClassId,
+});
+
+
 function createReycleViewAdapter() {
     var activity = new Activity(getActivity());
     var recycleView = new RecycleView(activity);
     var viewGroupId = activity.findViewById(1);
-    var jsRecycleViewAdapter = newJobj("Lcom/mountain/JsView/recycleview/JsRecycleViewAdapter");
-    var models = newJobj("Ljava/util/ArrayList");
-    var argsJson = createJArgsJson(createJArg("Lcom/mountain/JsView/JsInterface", getJsInterface()));
-    var jsViewModelBridge = newJobj("Lcom/mountain/JsView/JsViewModelBridge", argsJson);
+    var jsRecycleViewAdapter = newJobj(JsRecycleViewAdapterClassId);
+    var models = newJobj(ArrayListClassId);
     var len = 100;
     var i = 0;
     for (; i < len; i++) {
-        var dataSource = newJobj("Lcom/mountain/JsView/recycleview/DataSource");
-        var argsJson = createJArgsJson(createJArg("Ljava/lang/String", "meta"), createJArg("Ljava/lang/Object", i));
-        exec(dataSource, "putData", argsJson);
-        var argsJson = createJArgsJson(createJArg("Lcom/mountain/JsView/recycleview/DataSource", dataSource),
-            createJArg("Lcom/mountain/JsView/IJsViewModelBridge", jsViewModelBridge));
-        var model = newJobj("Lcom/mountain/JsView/recycleview/impl/ViewModel", argsJson)
-        var argsJson = createJArgsJson(createJArg("Ljava/lang/Object", model));
+        var virtualLinearLayout = new VirtualLinearLayout();
+        var virtualTextView = new VirtualTextView();
+        var layoutParams = { width: 200, height: 200 };
+        virtualTextView.setLayoutParams(JSON.stringify(layoutParams));
+        virtualTextView.setText("来自javascript" + i)
+        var layoutParams = { width: 800, height: 800 };
+        var virtualImageView = new VirtualImageView();
+        if (i % 2 == 0) {
+            virtualImageView.setImageUrl("http://d.hiphotos.baidu.com/zhidao/pic/item/bf096b63f6246b60bfac143de9f81a4c500fa2dd.jpg")
+        } else {
+            virtualImageView.setImageUrl("http://img5q.duitang.com/uploads/item/201411/30/20141130235625_H5yuH.jpeg")
+        }
+        virtualImageView.setLayoutParams(JSON.stringify(layoutParams));
+
+        virtualLinearLayout.addView(virtualTextView);
+        virtualLinearLayout.addView(virtualImageView);
+
+        var argsJson = createJArgsJson(createJArg(JsVirtualViewClassId, virtualLinearLayout.jVirtualViewId));
+        var model = newJobj(ViewModelClassId, argsJson)
+        var argsJson = createJArgsJson(createJArg(ObjectClassId, model));
         exec(models, "add", argsJson, model);
     }
-    var argsJson = createJArgsJson(createJArg("Ljava/util/List", models));
+    var argsJson = createJArgsJson(createJArg(ListClassId, models));
     exec(jsRecycleViewAdapter, "setViewModels", argsJson);
-
     var viewGroup = new ViewGroup(activity, getContentView());
     console.log("putData6")
     var linearLayoutManager = recycleView.createLinearLayoutManager();
     recycleView.setLayoutManager(linearLayoutManager);
     recycleView.setAdapter(jsRecycleViewAdapter);
-    viewGroup.addView(recycleView)
-
+    viewGroup.addView(recycleView);
 }
 
 function onBindViewHolder(jObjId, data) {
@@ -288,7 +367,7 @@ function onBindViewHolder(jObjId, data) {
     var textViewId = exec(jObjId, "getViewByPostition", argsJson);
     console.log(textViewId);
     var textview = new TextView(getActivity(), textViewId);
-    textview.setText("来自js "+meta);
+    textview.setText("来自js " + meta);
     textview.setTextColor(0xffff0000);
     textview.setTextSize(20);
 

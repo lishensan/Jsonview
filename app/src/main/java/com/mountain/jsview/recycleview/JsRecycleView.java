@@ -1,4 +1,4 @@
-package com.mountain.JsView.recycleview;
+package com.mountain.jsview.recycleview;
 
 import android.content.Context;
 import android.support.annotation.Nullable;

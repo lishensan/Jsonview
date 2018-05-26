@@ -1,7 +1,7 @@
-package com.mountain.JsView;
+package com.mountain.jsview;
 
-import com.mountain.JsView.recycleview.impl.ViewHolder;
-import com.mountain.JsView.recycleview.impl.ViewModel;
+import com.mountain.jsview.recycleview.impl.ViewHolder;
+import com.mountain.jsview.recycleview.impl.ViewModel;
 
 public interface IJsViewModelBridge<VH extends ViewHolder> {
 
