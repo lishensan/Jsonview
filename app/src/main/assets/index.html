@@ -2097,7 +2097,7 @@
         for (; i < len; i++) {
             var item = data.cards[0].items[i];
             var virtualLinearLayout = new VirtualLinearLayout();
-           
+
             if (i % 2 == 0) {
                 virtualLinearLayout.setOrientation(0);
                 virtualLinearLayout.setViewType(2);
@@ -2111,7 +2111,7 @@
                     virtualTextView.setText(item.meta[0].text)
                     virtualTextView.setTextColor(0xff333333);
                     virtualTextView.setTextSize(20);
-                    var layoutParams = { width: 1440/2, height: 800 };
+                    var layoutParams = { width: 1440 / 2, height: 800 };
                     var virtualImageView = new VirtualImageView();
                     virtualImageView.setImageUrl(item.img)
                     virtualImageView.setLayoutParams(JSON.stringify(layoutParams));
@@ -2134,7 +2134,7 @@
                     virtualTextView.setText(item.meta[0].text)
                     virtualTextView.setTextColor(0xff333333);
                     virtualTextView.setTextSize(20);
-                    var layoutParams = { width: 1440/3, height: 800 };
+                    var layoutParams = { width: 1440 / 3, height: 800 };
                     var virtualImageView = new VirtualImageView();
                     virtualImageView.setImageUrl(item.img)
                     virtualImageView.setLayoutParams(JSON.stringify(layoutParams));
@@ -2173,6 +2173,95 @@
         console.log("putData6")
         var linearLayoutManager = recycleView.createLinearLayoutManager();
         recycleView.setLayoutManager(linearLayoutManager);
+        recycleView.setAdapter(jsRecycleViewAdapter);
+        viewGroup.addView(recycleView);
+    }
+
+    function createListViewAdapter() {
+        var activity = new Activity(getActivity());
+        var recycleView = new ListView(activity);
+        var jsRecycleViewAdapter = newJobj(JsListViewAdapterClassId);
+        var models = newJobj(ArrayListClassId);
+
+        var len = data.cards[0].items.length
+        var i = 0;
+        for (; i < len; i++) {
+            var item = data.cards[0].items[i];
+            var virtualLinearLayout = new VirtualLinearLayout();
+
+            if (i % 2 == 0) {
+                virtualLinearLayout.setOrientation(0);
+                virtualLinearLayout.setViewType(2);
+                var j;
+                for (j = 0; j < 2; j++) {
+                    var itemVirtualLinearLayout = new VirtualLinearLayout();
+                    itemVirtualLinearLayout.setOrientation(1);
+                    var virtualTextView = new VirtualTextView();
+                    var layoutParams = { width: -2, height: -2 };
+                    virtualTextView.setLayoutParams(JSON.stringify(layoutParams));
+                    virtualTextView.setText(item.meta[0].text)
+                    virtualTextView.setTextColor(0xff333333);
+                    virtualTextView.setTextSize(20);
+                    var layoutParams = { width: 1440 / 2, height: 800 };
+                    var virtualImageView = new VirtualImageView();
+                    virtualImageView.setImageUrl(item.img)
+                    virtualImageView.setLayoutParams(JSON.stringify(layoutParams));
+
+                    itemVirtualLinearLayout.addView(virtualImageView);
+                    itemVirtualLinearLayout.addView(virtualTextView);
+
+                    virtualLinearLayout.addView(itemVirtualLinearLayout);
+                }
+            } else if (i % 3 == 0) {
+                virtualLinearLayout.setOrientation(0);
+                virtualLinearLayout.setViewType(3);
+                var j;
+                for (j = 0; j < 3; j++) {
+                    var itemVirtualLinearLayout = new VirtualLinearLayout();
+                    itemVirtualLinearLayout.setOrientation(1);
+                    var virtualTextView = new VirtualTextView();
+                    var layoutParams = { width: -2, height: -2 };
+                    virtualTextView.setLayoutParams(JSON.stringify(layoutParams));
+                    virtualTextView.setText(item.meta[0].text)
+                    virtualTextView.setTextColor(0xff333333);
+                    virtualTextView.setTextSize(20);
+                    var layoutParams = { width: 1440 / 3, height: 800 };
+                    var virtualImageView = new VirtualImageView();
+                    virtualImageView.setImageUrl(item.img)
+                    virtualImageView.setLayoutParams(JSON.stringify(layoutParams));
+
+                    itemVirtualLinearLayout.addView(virtualImageView);
+                    itemVirtualLinearLayout.addView(virtualTextView);
+
+                    virtualLinearLayout.addView(itemVirtualLinearLayout);
+                }
+            } else {
+                virtualLinearLayout.setOrientation(1);
+                var virtualTextView = new VirtualTextView();
+                var layoutParams = { width: -2, height: -2 };
+                virtualTextView.setLayoutParams(JSON.stringify(layoutParams));
+                virtualTextView.setText(item.meta[0].text)
+                virtualTextView.setTextColor(0xff333333);
+                virtualTextView.setTextSize(20);
+
+                var layoutParams = { width: 1440, height: 800 };
+                var virtualImageView = new VirtualImageView();
+                virtualImageView.setImageUrl(item.img)
+                virtualImageView.setLayoutParams(JSON.stringify(layoutParams));
+
+                virtualLinearLayout.addView(virtualImageView);
+                virtualLinearLayout.addView(virtualTextView);
+            }
+
+            var argsJson = createJArgsJson(createJArg(JsVirtualViewClassId, virtualLinearLayout.jVirtualViewId));
+            var model = newJobj(ViewModelClassId, argsJson)
+            var argsJson = createJArgsJson(createJArg(ObjectClassId, model));
+            exec(models, "add", argsJson, model);
+        }
+        var argsJson = createJArgsJson(createJArg(ListClassId, models));
+        exec(jsRecycleViewAdapter, "setViewModels", argsJson);
+        var viewGroup = new ViewGroup(activity, getContentView());
+        console.log("putData6")
         recycleView.setAdapter(jsRecycleViewAdapter);
         viewGroup.addView(recycleView);
     }

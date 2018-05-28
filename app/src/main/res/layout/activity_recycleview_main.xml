@@ -5,12 +5,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     >
-    <Button
-        android:id="@+id/button"
-        android:text="跳转到reyccleView版本"
-        android:layout_width="wrap_content"
-        android:layout_height="80dp"
-        />
     <FrameLayout
         android:id="@+id/rl_content"
         android:layout_width="match_parent"

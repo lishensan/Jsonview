@@ -1,20 +1,21 @@
-package com.mountain.jsview.recycleview;
+package com.mountain.jsview.listview;
 
-import android.support.v7.widget.RecyclerView;
-import android.util.SparseArray;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 
+import com.mountain.jsview.recycleview.ViewHolderManager;
 import com.mountain.jsview.recycleview.impl.ViewHolder;
 import com.mountain.jsview.recycleview.impl.ViewModel;
 
 import java.util.Collections;
 import java.util.List;
 
-public class JsRecycleViewAdapter extends RecyclerView.Adapter<ViewHolder> {
+public class JsListViewAdapter extends BaseAdapter {
     private List<ViewModel> mViewModels = Collections.emptyList();
     private ViewHolderManager mViewHolderManager;
 
-    public JsRecycleViewAdapter() {
+    public JsListViewAdapter() {
         mViewHolderManager = new ViewHolderManager();
     }
 
@@ -27,8 +28,23 @@ public class JsRecycleViewAdapter extends RecyclerView.Adapter<ViewHolder> {
     }
 
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return mViewHolderManager.getViewHolderManager(viewType).onCreateViewHolder(parent, viewType);
+    public int getCount() {
+        return mViewModels.size();
+    }
+
+    @Override
+    public ViewModel getItem(int position) {
+        return mViewModels.get(position);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return 0;
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return 100;
     }
 
     @Override
@@ -37,13 +53,12 @@ public class JsRecycleViewAdapter extends RecyclerView.Adapter<ViewHolder> {
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder viewHolder, int position) {
+    public View getView(int position, View convertView, ViewGroup parent) {
+        int itemViewType = getItemViewType(position);
+        ViewHolder viewHolder = mViewHolderManager.getViewHolderManager(itemViewType).onCreateViewHolder(parent, itemViewType);
         ViewModel viewModel = mViewModels.get(position);
         viewModel.onBindViewHolder(viewHolder, position);
-    }
-
-    @Override
-    public int getItemCount() {
-        return mViewModels.size();
+        viewHolder.itemView.setTag(itemViewType);
+        return viewHolder.itemView;
     }
 }

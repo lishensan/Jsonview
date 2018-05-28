@@ -195,7 +195,13 @@ var RecycleView = View.extend({
         return newJobj("Lcom/mountain/jsview/recycleview/JsLinearLayoutManager", argsJson)
     }
 });
-
+var ListView = View.extend({
+    jClassId: "Lcom/mountain/jsview/listview/JsListView",
+    setAdapter: function (adapter) {
+        var argsJson = createJArgsJson(createJArg(JsListViewAdapterClassId, adapter));
+        exec(this.jViewId, "setAdapter", argsJson, 1);
+    }
+});
 
 
 var TextView = View.extend({
@@ -261,6 +267,9 @@ var ListClassId = "Ljava/util/List";
 var ViewModelClassId = "Lcom/mountain/jsview/recycleview/impl/ViewModel";
 var ObjectClassId = "Ljava/lang/Object";
 var JsRecycleViewAdapterClassId = "Lcom/mountain/jsview/recycleview/JsRecycleViewAdapter";
+var JsListViewAdapterClassId = "Lcom/mountain/jsview/listview/JsListViewAdapter";
+
+
 
 var VirtualView = Base.extend({
     constructor: function () {

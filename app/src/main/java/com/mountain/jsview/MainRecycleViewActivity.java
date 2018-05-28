@@ -1,36 +1,25 @@
 package com.mountain.jsview;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
-import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainRecycleViewActivity extends AppCompatActivity {
 
     private WebView mWebview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_recycleview_main);
         ViewGroup viewById = (ViewGroup) findViewById(R.id.rl_content);
         JsInterface jsInterface = new JsInterface(viewById);
         mWebview = jsInterface.getJsEngine().getWebView();
-        TextView textView = (TextView) findViewById(R.id.button);
-        textView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(v.getContext(), MainRecycleViewActivity.class);
-                v.getContext().startActivity(intent);
-            }
-        });
 
         mWebview.setWebViewClient(new WebViewClient() {
             @Override
@@ -41,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                mWebview.loadUrl("javascript:createListViewAdapter()");
+                mWebview.loadUrl("javascript:createReycleViewAdapter2()");
             }
         });
 
