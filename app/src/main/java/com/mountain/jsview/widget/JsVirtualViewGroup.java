@@ -51,13 +51,8 @@ public abstract class JsVirtualViewGroup<T extends ViewGroup> extends JsVirtualV
         int childCount = nativeView.getChildCount();
         for (int i = 0; i < childCount; i++) {
             View nativeChildView = nativeView.getChildAt(i);
-            if (i < getCount()) {
-                nativeChildView.setVisibility(View.VISIBLE);
-                JsVirtualView childAt = getChildAt(i);
-                childAt.updateToNativeView(nativeChildView);
-            } else {
-                nativeChildView.setVisibility(View.GONE);
-            }
+            JsVirtualView childAt = getChildAt(i);
+            childAt.updateToNativeView(nativeChildView);
         }
     }
 }

@@ -19,6 +19,10 @@ public class JsRecycleViewAdapter extends RecyclerView.Adapter<ViewHolder> {
 
     public void setViewModels(List<ViewModel> viewModels) {
         mViewModels = viewModels;
+        for (ViewModel viewModel : mViewModels) {
+            int viewType = viewModel.getViewType();
+            mViewHolderManager.registViewHolderCreater(viewType, viewModel);
+        }
     }
 
     @Override
@@ -28,10 +32,7 @@ public class JsRecycleViewAdapter extends RecyclerView.Adapter<ViewHolder> {
 
     @Override
     public int getItemViewType(int position) {
-        ViewModel viewModel = mViewModels.get(position);
-        int viewType = viewModel.getViewType();
-        mViewHolderManager.registViewHolderCreater(viewType, viewModel);
-        return viewType;
+        return mViewModels.get(position).getViewType();
     }
 
     @Override

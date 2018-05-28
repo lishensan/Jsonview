@@ -276,6 +276,10 @@ var VirtualView = Base.extend({
     setLayoutParams: function (layoutParams) {
         var argsJson = createJArgsJson(createJArg(StringClassId, layoutParams));
         return exec(this.jVirtualViewId, "setLayoutParams", argsJson);
+    },
+    setViewType:function(viewType){
+        var argsJson = createJArgsJson(createJArg("I", viewType));
+        return exec(this.jVirtualViewId, "setViewType", argsJson);
     }
 });
 
