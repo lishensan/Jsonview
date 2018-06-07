@@ -16,6 +16,11 @@ public class JsRecycleView extends RecyclerView {
 
     public JsRecycleView(Context context, @Nullable AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        init();
+    }
+
+    private void init() {
+        setHasFixedSize(true);
     }
 
     @Override

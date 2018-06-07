@@ -33,10 +33,10 @@ public class MainActivity extends AppCompatActivity {
                 v.getContext().startActivity(intent);
             }
         });
+        jsEngine.addJavascriptInterface(jsInterface, "JsInterface");
         jsEngine.invokeJsFunc("init",
                 "{debug:true,screenWidth:" + displayMetrics.widthPixels + ",screenHeight:" + displayMetrics.heightPixels + "}");
         jsEngine.invokeJsFunc("createListViewAdapter");
-        jsEngine.addJavascriptInterface(jsInterface, "JsInterface");
 
     }
 }
