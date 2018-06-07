@@ -138,6 +138,11 @@ Base = Base.extend({
         }
     });
 //////////////////////////////////////////////////////
+var screenWidth = 0;
+var screenHeight = 0;
+var debug;
+
+
 var Context = Base.extend({
     constructor: function (contextId) {
         this.contextId = contextId;
@@ -147,6 +152,7 @@ var Context = Base.extend({
 var Activity = Context.extend({
     constructor: function (contextId) {
         this.base(contextId);
+
         this.activiyId = contextId;
     },
     activiyId: 0,
@@ -160,7 +166,7 @@ var View = Base.extend({
     constructor: function (context) {
         this.context = context;
         this.contextId = context.contextId;
-        console.log(this.jClassId);
+        log(this.jClassId);
         this.jViewId = arguments[1] || newJobj(this.jClassId, createJArgsJson(createJArg(this.contextClassId, this.contextId)));
     },
     contextClassId: "Landroid/content/Context",
@@ -224,10 +230,9 @@ var TextView = View.extend({
 
 var ViewGroup = View.extend({
     addView: function (view) {
-
         var argsJson = createJArgsJson(createJArg("Landroid/view/View", view.jViewId));
-        console.log(view.jViewId);
-        console.log(argsJson);
+        log(view.jViewId);
+        log(argsJson);
         exec(this.jViewId, "addView", argsJson, 1);
     }
 });
@@ -239,14 +244,14 @@ function showMessage(json) {
     var city = json.city;
 
     //alert(JSON.stringify(json));
-    console.log("name=" + name + ",city=" + city);
+    log("name=" + name + ",city=" + city);
 }
 
 function createTextView() {
     var activity = new Activity(getActivity());
     var textview = new TextView(activity);
     var viewGroupId = getContentView();
-    console.log(viewGroupId);
+    log(viewGroupId);
     var viewGroup = new ViewGroup(getActivity(), viewGroupId);
     textview.setTextColor(0xff0000ff);
     textview.setText("来自javascript创建");
@@ -270,10 +275,15 @@ var JsRecycleViewAdapterClassId = "Lcom/mountain/jsview/recycleview/JsRecycleVie
 var JsListViewAdapterClassId = "Lcom/mountain/jsview/listview/JsListViewAdapter";
 
 
+function log(log) {
+    if (debug == true) {
+        console.log(log);
+    }
+}
 
 var VirtualView = Base.extend({
     constructor: function () {
-        console.log(this.jClassId);
+        log(this.jClassId);
         this.jVirtualViewId = arguments[1] || newJobj(this.jClassId);
     },
     jVirtualViewId: 0,
@@ -286,7 +296,7 @@ var VirtualView = Base.extend({
         var argsJson = createJArgsJson(createJArg(StringClassId, layoutParams));
         return exec(this.jVirtualViewId, "setLayoutParams", argsJson);
     },
-    setViewType:function(viewType){
+    setViewType: function (viewType) {
         var argsJson = createJArgsJson(createJArg("I", viewType));
         return exec(this.jVirtualViewId, "setViewType", argsJson);
     }
@@ -328,7 +338,7 @@ var VirtualViewGroup = VirtualView.extend({
 });
 var VirtualLinearLayout = VirtualViewGroup.extend({
     jClassId: JsVirtualLinearLayoutClassId,
-    setOrientation:function(orientation){
+    setOrientation: function (orientation) {
         var argsJson = createJArgsJson(createJArg("I", orientation));
         exec(this.jVirtualViewId, "setOrientation", argsJson)
     }
@@ -369,7 +379,7 @@ function createReycleViewAdapter() {
     var argsJson = createJArgsJson(createJArg(ListClassId, models));
     exec(jsRecycleViewAdapter, "setViewModels", argsJson);
     var viewGroup = new ViewGroup(activity, getContentView());
-    console.log("putData6")
+    log("putData6")
     var linearLayoutManager = recycleView.createLinearLayoutManager();
     recycleView.setLayoutManager(linearLayoutManager);
     recycleView.setAdapter(jsRecycleViewAdapter);
@@ -377,12 +387,12 @@ function createReycleViewAdapter() {
 }
 
 function onBindViewHolder(jObjId, data) {
-    console.log(jObjId);
+    log(jObjId);
     var meta = data.dataSouce.meta;
-    console.log(meta);
+    log(meta);
     var argsJson = createJArgsJson(createJArg("I", 0));
     var textViewId = exec(jObjId, "getViewByPostition", argsJson);
-    console.log(textViewId);
+    log(textViewId);
     var textview = new TextView(getActivity(), textViewId);
     textview.setText("来自js " + meta);
     textview.setTextColor(0xffff0000);
@@ -434,6 +444,18 @@ function getContentView() {
 function newJobj(classId, argsJson) {
     return window.JsInterface.newJobj(classId, argsJson);
 }
+
+var activiyId;
 function getActivity() {
-    return window.JsInterface.getActivity();
+    if (activiyId == undefined) {
+        activiyId = window.JsInterface.getActivity();
+    }
+    return activiyId;
+}
+function init(initJson) {
+    log(initJson);
+    debug = initJson.debug;
+    screenWidth = initJson.screenWidth;
+    screenHeight = initJson.screenHeight;
+
 }

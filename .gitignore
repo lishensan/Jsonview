@@ -8,3 +8,7 @@
 /captures
 .idea/*
 .idea/**/*
+.settings/
+app/.classpath
+app/.project
+.project

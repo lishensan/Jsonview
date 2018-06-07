@@ -1,17 +1,11 @@
 package com.mountain.jsview;
 
-import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.Toast;
-
-import com.socks.library.KLog;
-import com.socks.library.klog.XmlLog;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,13 +36,11 @@ public class JsInterface<T extends ViewGroup> {
         contextId = registObj(t.getContext());
         contentId = registObj(t);
         jsInterfaceId = registObj(this);
-        WebView webView = new WebView(t.getContext());
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);//打开js和安卓通信
-        mJsEngine = new JsEngine(webView);
-        webView.loadUrl("file:///android_asset/index.html");//本地模板
+
+        mJsEngine = new JsEngine(t.getContext());
 //      mWebView.loadData("jsfile", "text/html", null);
 //      mWebview.loadUrl("http://");//在线模板
+
     }
 
 
@@ -58,7 +50,7 @@ public class JsInterface<T extends ViewGroup> {
 
     @JavascriptInterface //android4.2之后，如果不加上该注解，js无法调用android方法（安全）
     public int newJobj(final String classType, final String argsJson) {
-        KLog.d(TAG, classType + "  " + argsJson);
+//        KLog.d(TAG, classType + "  " + argsJson);
         if (classType != null) {
             try {
                 Object o;
@@ -310,7 +302,7 @@ public class JsInterface<T extends ViewGroup> {
      * return 结果的软引用
      */
     private double exec(boolean isMethod, Object object, Class execObjClazz, final String name, final String argsJson) {
-        KLog.d(TAG, isMethod, object, execObjClazz, name, argsJson);
+//        KLog.d(TAG, isMethod, object, execObjClazz, name, argsJson);
         try {
             if (argsJson != null) {
                 JSONArray jsonArray = new JSONArray(argsJson);
